@@ -6,8 +6,10 @@ import './App.css';
 /**
  * State declaration for <App />
  */
+//Should always have two properties: 'data' and 'showGraph'
 interface IState {
   data: ServerRespond[],
+  showGraph: boolean,
 }
 
 /**
@@ -21,7 +23,9 @@ class App extends Component<{}, IState> {
     this.state = {
       // data saves the server responds.
       // We use this state to parse data down to the child element (Graph) as element property
+      // Initial state of Graph should be hidden. We want graph to show when user clicks.
       data: [],
+      showGraph: false,
     };
   }
 
@@ -29,18 +33,35 @@ class App extends Component<{}, IState> {
    * Render Graph react component with state.data parse as property data
    */
   renderGraph() {
-    return (<Graph data={this.state.data}/>)
+    // Condition to render the graph when application state's 'showGraph' property to 'true'
+    if (this.state.showGraph){
+      return (<Graph data={this.state.data}/>)
+    }
   }
 
   /**
    * Get new data from server and update the state with the new data
    */
   getDataFromServer() {
-    DataStreamer.getData((serverResponds: ServerRespond[]) => {
-      // Update the state by creating a new array of data that consists of
-      // Previous data in the state and the new data from server
-      this.setState({ data: [...this.state.data, ...serverResponds] });
-    });
+    // created variable to set as counter
+    // Data will be fetched every 100 ms.
+    // everytime data is fetched counter increases until it hits 1000
+    // once limit is reached it will stop the data fetching loop
+    let x = 0;
+    const interval = setInterval(()=>{
+      DataStreamer.getData((serverResponds: ServerRespond[]) => {
+        // Update the state by creating a new array of data that consists of
+        // Previous data in the state and the new data from server
+        this.setState({
+          data: serverResponds,
+          showGraph: true,
+        });
+      });
+      x++;
+      if (x > 1000){
+        clearInterval(interval);
+      }
+    }, 100);
   }
 
   /**
